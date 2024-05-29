@@ -1,79 +1,27 @@
 pipeline {
     agent any
-
     stages {
         stage('Clone') {
             steps {
-                git 'https://github.com/Tillu6/calc'
+                git 'https://github.com/Tillu6/calc.git'
             }
         }
-
         stage('Build') {
             steps {
-                script {
-                    if (isUnix()) {
-                        sh 'xcodebuild -scheme CalculatorApp build' // For iOS
-                    } else {
-                        bat 'gradlew assembleDebug' // For Android
-                    }
-                }
+                sh 'sudo xcode-select -s /Applications/Xcode.app/Contents/Developer'
+                sh 'xcodebuild -scheme calc build'
             }
         }
-
         stage('Test') {
             steps {
-                script {
-                    if (isUnix()) {
-                        sh 'xcodebuild test -scheme CalculatorApp' // For iOS
-                    } else {
-                        bat 'gradlew test' // For Android
-                    }
-                }
+                sh 'xcodebuild test -scheme calc'
             }
         }
-
-        stage('Code Quality Analysis') {
+        stage('Archive') {
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    script {
-                        if (isUnix()) {
-                            sh './gradlew sonarqube' // For Android
-                        } else {
-                            sh 'xcodebuild clean build' // For iOS with SonarQube support
-                        }
-                    }
-                }
+                sh 'xcodebuild -scheme SimpleCalculator -archivePath $PWD/build/calc.xcarchive archive'
+                sh 'xcodebuild -exportArchive -archivePath $PWD/build/calc.xcarchive -exportPath $PWD/build/calc.ipa -exportOptionsPlist exportOptions.plist'
             }
-        }
-
-        stage('Deploy to Staging') {
-            steps {
-                script {
-                    // Deployment steps (e.g., Docker, Firebase, TestFlight)
-                }
-            }
-        }
-
-        stage('Deploy to Production') {
-            steps {
-                script {
-                    // Deployment steps for production
-                }
-            }
-        }
-
-        stage('Monitoring and Alerting') {
-            steps {
-                script {
-                    // Set up monitoring and alerting (e.g., Datadog, New Relic)
-                }
-            }
-        }
-    }
-
-    post {
-        always {
-            cleanWs()
         }
     }
 }
